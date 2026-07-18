@@ -5,7 +5,7 @@ for job postings, plus a separate hackathon discovery pipeline.
 from db.models import get_session, Opportunity
 from db.memory import is_duplicate
 from tools.scrapers import search_hackernews_jobs
-from tools.scoring import score_opportunity, classify_hackathon
+from tools.scoring import score_opportunities_batch, classify_hackathon
 from tools.search import search_hackathons
 
 STACK_CONTEXT = "Python, FastAPI, AWS Lambda, PostgreSQL, LangGraph, Google ADK, XGBoost, React, Spring Boot"
@@ -13,7 +13,7 @@ STACK_CONTEXT = "Python, FastAPI, AWS Lambda, PostgreSQL, LangGraph, Google ADK,
 
 def run_scout(limit: int | None = None, min_fit_score: int = 6) -> dict:
     """
-    Runs the full Scout pipeline once: scrape -> dedup -> score -> persist.
+    Runs the full Scout pipeline once: scrape -> dedup -> batch-score -> persist.
 
     limit: cap on how many scraped postings to process (None = all).
     min_fit_score: only postings scoring >= this get inserted into DB.
@@ -31,14 +31,22 @@ def run_scout(limit: int | None = None, min_fit_score: int = 6) -> dict:
         "inserted_opportunities": [],
     }
 
+    # Dedup BEFORE scoring -- no point spending tokens scoring postings
+    # we're going to throw away anyway
+    new_postings = []
+    for posting in postings:
+        if is_duplicate(posting["url"]):
+            summary["skipped_duplicate"] += 1
+        else:
+            new_postings.append(posting)
+
+    if not new_postings:
+        return summary
+
+    score_results = score_opportunities_batch(new_postings, batch_size=15)
+
     with get_session() as session:
-        for posting in postings:
-            if is_duplicate(posting["url"]):
-                summary["skipped_duplicate"] += 1
-                continue
-
-            score_result = score_opportunity(posting)
-
+        for posting, score_result in zip(new_postings, score_results):
             if score_result["fit_score"] is None:
                 summary["scoring_errors"] += 1
                 continue

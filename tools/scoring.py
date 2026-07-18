@@ -214,3 +214,79 @@ def classify_hackathon(title: str, content: str, stack_context: str) -> dict:
     except (json.JSONDecodeError, ValueError) as e:
         print(f"Hackathon classify parse failed: {e}")
         return {"eligible": False, "reason": f"parse error: {e}", "stack_relevance_score": 0, "deadline_found": None}
+
+def score_opportunities_batch(opportunities: list[dict], batch_size: int = 15) -> list[dict]:
+    """
+    Batched version of score_opportunity() -- scores multiple postings
+    per LLM call instead of one call per posting. Cuts both request
+    count and redundant system-prompt token overhead by ~batch_size x.
+
+    Built after hitting Groq's free-tier daily token ceiling (200K TPD)
+    during testing -- 219 sequential single-posting calls was the root
+    cause, not a provider limitation. This is the actual fix.
+
+    Returns list of {"fit_score": int|None, "fit_reasoning": str},
+    same order and length as input -- failed items get fit_score=None
+    so the caller's existing None-check logic still works unchanged.
+
+    NOTE: no response_format json_object here -- Groq's structured
+    output mode requires a top-level JSON object, not an array, so
+    the array response is parsed manually with defensive markdown-fence
+    stripping instead.
+    """
+    all_results = []
+
+    for i in range(0, len(opportunities), batch_size):
+        batch = opportunities[i:i + batch_size]
+
+        postings_text = "\n\n".join(
+            f"[{idx}] Company: {opp.get('company') or 'unknown'}\n"
+            f"Role: {opp.get('role_type') or 'unknown'}\n"
+            f"Description: {opp.get('description', '')[:800]}"
+            for idx, opp in enumerate(batch)
+        )
+
+        batch_prompt = (
+            f"{SYSTEM_PROMPT}\n\n"
+            f"Score EACH of the following {len(batch)} postings (indexed [0] to [{len(batch)-1}]). "
+            f"Respond with ONLY a JSON array, same length and order as input, no other text, no markdown:\n"
+            f'[{{"fit_score": <int>, "fit_reasoning": "<reason>"}}, ...]'
+        )
+
+        try:
+            result = _call_groq({
+                "model": MODEL,
+                "messages": [
+                    {"role": "system", "content": batch_prompt},
+                    {"role": "user", "content": postings_text},
+                ],
+                "temperature": 0.2,
+            })
+        except RuntimeError as e:
+            print(f"Batch scoring failed entirely for batch starting at {i}: {e}")
+            all_results.extend([{"fit_score": None, "fit_reasoning": f"Batch call failed: {e}"}] * len(batch))
+            continue
+
+        raw = result["choices"][0]["message"]["content"]
+
+        try:
+            cleaned = raw.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```")[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+            parsed = json.loads(cleaned)
+
+            if not isinstance(parsed, list) or len(parsed) != len(batch):
+                raise ValueError(f"Expected list of {len(batch)}, got {type(parsed)} len={len(parsed) if isinstance(parsed, list) else 'n/a'}")
+
+            for item in parsed:
+                all_results.append({
+                    "fit_score": int(item["fit_score"]),
+                    "fit_reasoning": str(item["fit_reasoning"])[:500],
+                })
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as e:
+            print(f"Batch parse failed for batch starting at {i}: {e} | raw: {raw[:300]}")
+            all_results.extend([{"fit_score": None, "fit_reasoning": f"Batch parse error: {e}"}] * len(batch))
+
+    return all_results
