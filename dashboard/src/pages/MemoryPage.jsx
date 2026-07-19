@@ -21,17 +21,17 @@ function formatDate(dateStr) {
 function ProportionBar({ approved, skipped, ignored }) {
   const total = approved + skipped + ignored;
   if (total === 0) {
-    return <div className="h-2 bg-white/[0.06] rounded-sm w-full" />;
+    return <div className="h-2.5 bg-border rounded-sm w-full" />;
   }
   const aW = (approved / total) * 100;
   const sW = (skipped / total) * 100;
   const iW = (ignored / total) * 100;
 
   return (
-    <div className="h-2 rounded-sm w-full flex overflow-hidden">
-      {approved > 0 && <div className="h-full bg-accent/70" style={{ width: `${aW}%` }} />}
+    <div className="h-2.5 rounded-sm w-full flex overflow-hidden bg-border">
+      {approved > 0 && <div className="h-full bg-accent" style={{ width: `${aW}%` }} />}
       {skipped > 0 && <div className="h-full bg-white/20" style={{ width: `${sW}%` }} />}
-      {ignored > 0 && <div className="h-full bg-white/[0.08]" style={{ width: `${iW}%` }} />}
+      {ignored > 0 && <div className="h-full bg-white/[0.07]" style={{ width: `${iW}%` }} />}
     </div>
   );
 }
@@ -126,7 +126,7 @@ export default function MemoryPage() {
     return (
       <div>
         <h2 className="font-heading text-xl font-bold mb-6">Memory</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       </div>
@@ -170,16 +170,16 @@ export default function MemoryPage() {
           Preference Patterns
         </h3>
         {hasPatterns ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {patternEntries.map(([category, stats]) => (
               <PreferenceCard key={category} category={category} stats={stats} />
             ))}
           </div>
         ) : (
-          <div className="border border-border rounded p-10 text-center">
-            <p className="font-body text-muted text-sm">
-              Cypher hasn't learned any preferences yet — approve or skip opportunities in Telegram to start building this.
-            </p>
+        <div className="border border-border rounded p-8 md:p-10 text-center">
+          <p className="font-body text-muted text-sm">
+            Cypher hasn't learned any preferences yet — approve or skip opportunities in Telegram to start building this.
+          </p>
           </div>
         )}
       </div>

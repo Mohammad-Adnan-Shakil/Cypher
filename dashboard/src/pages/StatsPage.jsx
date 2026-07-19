@@ -83,13 +83,13 @@ export default function StatsPage() {
     return (
       <div>
         <h2 className="font-heading text-xl font-bold mb-6">Stats</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <SkeletonCard className="col-span-2" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <SkeletonCard className="sm:col-span-2" />
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
-          <SkeletonCard className="col-span-3 h-32" />
+          <SkeletonCard className="sm:col-span-3 h-32" />
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ export default function StatsPage() {
     return (
       <div>
         <h2 className="font-heading text-xl font-bold mb-6">Stats</h2>
-        <div className="border border-border rounded p-10 text-center">
+        <div className="border border-border rounded p-8 md:p-10 text-center">
           <div className="font-mono text-accent text-lg mb-3">◈</div>
           <p className="font-body text-muted text-sm mb-1">
             Can't reach the Cypher API — is it running on localhost:8000?
@@ -127,11 +127,11 @@ export default function StatsPage() {
     <div>
       <h2 className="font-heading text-xl font-bold mb-6">Stats</h2>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Opportunities"
           value={data.total_opportunities?.toLocaleString() ?? '—'}
-          className="col-span-2"
+          className="sm:col-span-2"
         />
 
         <StatCard
@@ -163,9 +163,9 @@ export default function StatsPage() {
       </div>
 
       {sourceEntries.length > 0 ? (
-        <div className="border border-border rounded p-6 mt-6">
-          <h3 className="font-heading text-sm font-bold text-primary mb-5">
-            OPPORTUNITIES BY SOURCE
+        <div className="border border-border rounded p-5 mt-6">
+          <h3 className="font-heading text-sm font-bold text-primary mb-5 uppercase tracking-wider">
+            Opportunities by Source
           </h3>
           <div className="flex flex-col gap-3">
             {sourceEntries.map(([name, count]) => (
@@ -179,9 +179,9 @@ export default function StatsPage() {
           </div>
         </div>
       ) : (
-        <div className="border border-border rounded p-6 mt-6">
-          <h3 className="font-heading text-sm font-bold text-primary mb-5">
-            OPPORTUNITIES BY SOURCE
+        <div className="border border-border rounded p-5 mt-6">
+          <h3 className="font-heading text-sm font-bold text-primary mb-5 uppercase tracking-wider">
+            Opportunities by Source
           </h3>
           <p className="font-body text-sm text-muted">No data yet.</p>
         </div>

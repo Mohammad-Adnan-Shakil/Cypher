@@ -104,7 +104,7 @@ export default function OutreachPage() {
     return (
       <div>
         <h2 className="font-heading text-xl font-bold mb-6">Outreach</h2>
-        <div className="border border-border rounded p-10 text-center">
+        <div className="border border-border rounded p-8 md:p-10 text-center">
           <div className="font-mono text-accent text-lg mb-3">◌</div>
           <p className="font-body text-muted text-sm mb-1">
             Can't reach the Cypher API — is it running on localhost:8000?
@@ -121,7 +121,7 @@ export default function OutreachPage() {
     return (
       <div>
         <h2 className="font-heading text-xl font-bold mb-6">Outreach</h2>
-        <div className="border border-border rounded p-10 text-center">
+        <div className="border border-border rounded p-8 md:p-10 text-center">
           <p className="font-body text-muted text-sm">No outreach sent yet.</p>
         </div>
       </div>
@@ -157,11 +157,11 @@ export default function OutreachPage() {
                         className={`border-b border-border ${isStale ? 'border-l-2 border-l-accent' : ''} ${hasReply ? 'cursor-pointer' : ''}`}
                         onClick={() => hasReply && toggleExpand(row.id)}
                       >
-                        <div className="flex items-center gap-4 px-4 py-3">
-                          <div className="w-28 flex-shrink-0 font-heading text-sm font-bold text-primary">
+                        <div className="flex items-center gap-6 px-4 py-3">
+                          <div className="w-[200px] flex-shrink-0 font-heading text-sm font-bold text-primary truncate">
                             {row.company || '—'}
                           </div>
-                          <div className="w-24 flex-shrink-0 font-body text-sm text-muted">
+                          <div className="w-[180px] flex-shrink-0 font-body text-sm text-muted truncate">
                             {row.founder_name || '—'}
                           </div>
                           <div className="w-36 flex-shrink-0 font-mono text-xs text-muted truncate">

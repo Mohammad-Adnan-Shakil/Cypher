@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import GenerativeArtScene from './GenerativeArtScene';
 
 const NAV_LINKS = [
+  { label: 'Dashboard', href: '/dashboard' },
   { label: 'Architecture', href: '#architecture' },
   { label: 'Agents', href: '#agents' },
   { label: 'GitHub', href: 'https://github.com/Mohammad-Adnan-Shakil/Cypher', external: true },
@@ -37,7 +38,7 @@ export default function Hero() {
             <span className="text-primary">CYPHER</span>
           </div>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 sm:gap-8">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.label}
@@ -54,9 +55,9 @@ export default function Hero() {
         </nav>
       </header>
 
-      <section className="relative z-20 flex flex-col items-center justify-center px-6 pt-20 pb-32 text-center">
+      <section className="relative z-20 flex flex-col items-center justify-center px-4 sm:px-6 pt-14 sm:pt-20 pb-20 sm:pb-32 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="font-heading text-[clamp(2.75rem,7vw,6.5rem)] leading-[1.05] font-bold mb-6">
+          <h1 className="font-heading text-[clamp(1.75rem,4.5vw,5rem)] leading-[1.1] font-bold mb-5">
             {WORDS.map((word, i) => (
               <span
                 key={word}
