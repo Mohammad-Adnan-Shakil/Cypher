@@ -1,4 +1,5 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
+import LogoMark from '../components/LogoMark';
 
 const NAV_ITEMS = [
   { to: '/dashboard/stats', label: 'Stats', icon: '◈' },
@@ -13,7 +14,7 @@ export default function DashboardLayout() {
     <div className="flex min-h-screen bg-surface text-primary">
       <aside className="w-16 md:w-56 flex-shrink-0 border-r border-border flex flex-col">
         <Link to="/dashboard/stats" className="flex items-center justify-center md:justify-start gap-2 font-heading text-lg tracking-[0.2em] px-0 md:px-6 py-5">
-          <span className="text-accent text-xl leading-none">•</span>
+          <LogoMark size={20} />
           <span className="text-primary hidden md:inline">CYPHER</span>
         </Link>
 

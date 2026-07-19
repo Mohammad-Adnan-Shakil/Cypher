@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import GenerativeArtScene from './GenerativeArtScene';
+import LogoMark from './LogoMark';
 
 const NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -35,7 +36,7 @@ export default function Hero() {
       <header className="relative z-20">
         <nav className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
           <div className="flex items-center gap-2 font-heading text-lg tracking-[0.2em]">
-            <span className="text-accent text-xl leading-none">•</span>
+            <LogoMark size={22} />
             <span className="text-primary">CYPHER</span>
           </div>
 
