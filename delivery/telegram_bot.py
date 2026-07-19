@@ -151,7 +151,8 @@ async def handle_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             opp.status = "ignored"
             opp.user_feedback = "skipped"
 
-        category = opp.role_type or "uncategorized"
+        from tools.scoring import classify_opportunity_category
+        category = classify_opportunity_category(opp.company or "", opp.role_type or "", opp.description or "")
         session.commit()
 
     update_feedback_pattern(category, "approved" if action.lower() == "send" else "skipped")
