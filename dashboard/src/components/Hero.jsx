@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import GenerativeArtScene from './GenerativeArtScene';
 import LogoMark from './LogoMark';
+import ArchitectureDiagram from './ArchitectureDiagram';
 
 const NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -110,23 +111,7 @@ export default function Hero() {
       <div className="max-w-4xl mx-auto">
         <h2 className="font-heading text-3xl font-bold mb-14">How it works</h2>
 
-        <div className="flex flex-col gap-10">
-          {[
-            { num: '01', title: 'Reply Tracker checks overnight replies', desc: 'Scans Gmail threads for replies to sent outreach, classifies sentiment, and updates the database before the day\'s pipeline starts.' },
-            { num: '02', title: 'Opportunity Scout scrapes and scores job postings', desc: 'Pulls the latest HN "Who is Hiring" thread, batch-scores each posting via LLM fit against your stack and preferences, and dedupes against past opportunities.' },
-            { num: '03', title: 'High-scoring opportunities trigger research and drafting', desc: 'Any opportunity scoring 8+ automatically runs the Founder Researcher (finds the person behind the company) then the Outreach Drafter (writes a personalized cold email).' },
-            { num: '04', title: 'Tech Pulse and Hackathon Scout run in parallel', desc: 'Tech Pulse pulls relevant news filtered against your stack; Hackathon Scout searches for open events matching your eligibility and interests.' },
-            { num: '05', title: 'Everything compiles into one Telegram digest', desc: 'All results — new opportunities, drafted emails, tech news, open hackathons — are bundled into a single message and sent to you every morning.' },
-          ].map((step) => (
-            <div key={step.num} className="flex gap-5">
-              <span className="font-mono text-2xl text-accent font-bold leading-none flex-shrink-0 mt-0.5">{step.num}</span>
-              <div>
-                <h3 className="font-heading text-base font-bold text-primary mb-1">{step.title}</h3>
-                <p className="font-body text-sm text-muted leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ArchitectureDiagram className="mb-8" />
 
         <p className="font-body text-sm text-muted/60 mt-12 border-t border-border pt-6">
           Runs automatically every morning via GitHub Actions — no manual trigger needed.
