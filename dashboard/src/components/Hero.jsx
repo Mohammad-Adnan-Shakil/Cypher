@@ -18,6 +18,7 @@ export default function Hero() {
   }, []);
 
   return (
+    <>
     <div className="relative min-h-screen bg-surface text-primary overflow-hidden">
       <GenerativeArtScene />
 
@@ -103,5 +104,56 @@ export default function Hero() {
         </div>
       </section>
     </div>
+
+    <section id="architecture" className="bg-surface text-primary border-t border-border py-24 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto">
+        <h2 className="font-heading text-3xl font-bold mb-14">How it works</h2>
+
+        <div className="flex flex-col gap-10">
+          {[
+            { num: '01', title: 'Reply Tracker checks overnight replies', desc: 'Scans Gmail threads for replies to sent outreach, classifies sentiment, and updates the database before the day\'s pipeline starts.' },
+            { num: '02', title: 'Opportunity Scout scrapes and scores job postings', desc: 'Pulls the latest HN "Who is Hiring" thread, batch-scores each posting via LLM fit against your stack and preferences, and dedupes against past opportunities.' },
+            { num: '03', title: 'High-scoring opportunities trigger research and drafting', desc: 'Any opportunity scoring 8+ automatically runs the Founder Researcher (finds the person behind the company) then the Outreach Drafter (writes a personalized cold email).' },
+            { num: '04', title: 'Tech Pulse and Hackathon Scout run in parallel', desc: 'Tech Pulse pulls relevant news filtered against your stack; Hackathon Scout searches for open events matching your eligibility and interests.' },
+            { num: '05', title: 'Everything compiles into one Telegram digest', desc: 'All results — new opportunities, drafted emails, tech news, open hackathons — are bundled into a single message and sent to you every morning.' },
+          ].map((step) => (
+            <div key={step.num} className="flex gap-5">
+              <span className="font-mono text-2xl text-accent font-bold leading-none flex-shrink-0 mt-0.5">{step.num}</span>
+              <div>
+                <h3 className="font-heading text-base font-bold text-primary mb-1">{step.title}</h3>
+                <p className="font-body text-sm text-muted leading-relaxed">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="font-body text-sm text-muted/60 mt-12 border-t border-border pt-6">
+          Runs automatically every morning via GitHub Actions — no manual trigger needed.
+        </p>
+      </div>
+    </section>
+
+    <section id="agents" className="bg-surface text-primary border-t border-border py-24 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="font-heading text-3xl font-bold mb-14">The agents</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[
+            { num: '1', name: 'Opportunity Scout', desc: 'Scrapes HN\'s hiring threads, scores fit via LLM, dedupes, persists' },
+            { num: '2', name: 'Founder Researcher', desc: 'Finds the founder, researches the company, guesses email format' },
+            { num: '3', name: 'Outreach Drafter', desc: 'Writes a personalized cold email from verified profile facts' },
+            { num: '4', name: 'Tech Pulse', desc: 'Pulls relevant tech news filtered against my stack' },
+            { num: '5', name: 'Reply Tracker', desc: 'Checks sent outreach threads, classifies replies, alerts via Telegram' },
+          ].map((agent) => (
+            <div key={agent.num} className="border border-border rounded p-5 flex flex-col gap-2 relative">
+              <span className="font-mono text-[11px] text-accent tracking-widest self-end">AGENT {agent.num}</span>
+              <h3 className="font-heading text-sm font-bold text-primary">{agent.name}</h3>
+              <p className="font-body text-sm text-muted leading-relaxed">{agent.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+    </>
   );
 }

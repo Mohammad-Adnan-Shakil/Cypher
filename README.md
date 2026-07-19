@@ -2,6 +2,8 @@
 
 > Watches. Researches. Drafts. Remembers. Gets smarter.
 
+**Live:** [Dashboard](https://cypher-navy.vercel.app) · [API](https://cypher-rbw6.onrender.com)
+
 Cypher is a multi-agent system that autonomously finds part-time ML/backend
 opportunities, researches the people behind them, drafts personalized
 outreach, tracks replies, and learns from what I approve or skip — so my
