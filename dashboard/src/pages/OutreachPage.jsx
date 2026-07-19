@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://cypher-rbw6.onrender.com';
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
