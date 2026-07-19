@@ -21,6 +21,7 @@ from agents.tech_pulse import run_tech_pulse
 from delivery.telegram_bot import send_morning_brief
 from db.models import get_session, Opportunity, TechUpdate
 from sqlalchemy import select
+from agents.reply_tracker import run_reply_tracker
 
 AUTO_DRAFT_THRESHOLD = 8
 
@@ -37,6 +38,10 @@ def node_scout(state: CypherState) -> dict:
     print(f"[Scout] scraped={summary['scraped']} inserted={summary['inserted']}")
     return {"scout_summary": summary}
 
+def node_reply_tracker(state: CypherState) -> dict:
+    summary = run_reply_tracker()
+    print(f"[ReplyTracker] checked={summary['checked']} new_replies={summary['new_replies']}")
+    return {}
 
 def node_auto_research_and_draft(state: CypherState) -> dict:
     """
@@ -91,16 +96,17 @@ def node_compile_and_send(state: CypherState) -> dict:
     print(f"[Digest] sent={success}")
     return {}
 
-
 def build_graph():
     graph = StateGraph(CypherState)
+    graph.add_node("reply_tracker", node_reply_tracker)
     graph.add_node("scout", node_scout)
     graph.add_node("auto_draft", node_auto_research_and_draft)
     graph.add_node("tech_pulse", node_tech_pulse)
     graph.add_node("hackathons", node_hackathons)
     graph.add_node("compile_and_send", node_compile_and_send)
 
-    graph.add_edge(START, "scout")
+    graph.add_edge(START, "reply_tracker")
+    graph.add_edge("reply_tracker", "scout")
     graph.add_edge("scout", "auto_draft")
     graph.add_edge("auto_draft", "tech_pulse")
     graph.add_edge("tech_pulse", "hackathons")

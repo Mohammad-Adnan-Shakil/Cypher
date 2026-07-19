@@ -131,3 +131,45 @@ def send_email(to: str, subject: str, body: str) -> dict:
     result = service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
     return {"message_id": result["id"], "thread_id": result["threadId"]}
+
+def check_thread_for_reply(thread_id: str) -> dict | None:
+    """
+    Checks a specific Gmail thread (from Outreach.gmail_thread_id) for
+    a reply. Returns the latest message's content if the thread has
+    more than one message (meaning someone replied to our sent email),
+    or None if it's still just our original outbound message.
+
+    More precise than a broad inbox search -- ties directly to a known
+    sent thread instead of heuristically matching sender/subject.
+    """
+    service = _get_gmail_service()
+    thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+
+    messages = thread.get("messages", [])
+    if len(messages) <= 1:
+        return None  # no reply yet -- only our original message exists
+
+    latest = messages[-1]
+    headers = {h["name"]: h["value"] for h in latest["payload"]["headers"]}
+
+    # Extract plain text body -- Gmail payloads can be multi-part
+    body = ""
+    payload = latest["payload"]
+    if "parts" in payload:
+        for part in payload["parts"]:
+            if part.get("mimeType") == "text/plain":
+                data = part["body"].get("data", "")
+                if data:
+                    body = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+                    break
+    else:
+        data = payload.get("body", {}).get("data", "")
+        if data:
+            body = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+    return {
+        "from": headers.get("From", ""),
+        "date": headers.get("Date", ""),
+        "content": body[:2000],
+        "snippet": latest.get("snippet", ""),
+    }

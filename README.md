@@ -45,7 +45,7 @@ entirely through Telegram.
 | 2 | Founder Researcher | ✅ Working | Finds founder via Tavily search, researches company, guesses email format |
 | 3 | Outreach Drafter | ✅ Working | Drafts personalized cold email from verified profile facts, validates against generic-template language |
 | 4 | Tech Pulse | ✅ Working | Pulls HN top stories + AI/India startup news, filters by stack relevance |
-| 5 | Reply Tracker | ⚠️ Partial | Gmail OAuth + inbox search + reply classification + send capability all built and tested individually. **Not yet wired into the orchestrator** — no automated action on incoming replies yet. |
+| 5 | Reply Tracker | ✅ Working | Checks sent outreach threads for replies via Gmail thread IDs, classifies sentiment/intent, updates DB, sends Telegram alert. Wired into daily orchestrator run. |
 
 ## Tech Stack
 
@@ -76,7 +76,6 @@ compiled Telegram digest) and **runs automatically every morning**, no
 manual trigger required.
 
 **Known gaps / not yet built:**
-- Reply Tracker isn't wired into the daily orchestrator run — no automated action on incoming email replies yet
 - No dashboard yet (planned: React + 21st.dev components, dark theme + neon pink accent, light mode toggle)
 
 ## Deployment
