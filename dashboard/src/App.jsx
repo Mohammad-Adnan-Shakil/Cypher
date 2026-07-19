@@ -4,6 +4,8 @@ import DashboardLayout from './pages/DashboardLayout';
 import StatsPage from './pages/StatsPage';
 import OpportunitiesPage from './pages/OpportunitiesPage';
 import OutreachPage from './pages/OutreachPage';
+import MemoryPage from './pages/MemoryPage';
+import HackathonsPage from './pages/HackathonsPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 
 export default function App() {
@@ -16,8 +18,8 @@ export default function App() {
           <Route path="stats" element={<StatsPage />} />
           <Route path="opportunities" element={<OpportunitiesPage />} />
           <Route path="outreach" element={<OutreachPage />} />
-          <Route path="hackathons" element={<PlaceholderPage title="Hackathons" />} />
-          <Route path="memory" element={<PlaceholderPage title="Memory" />} />
+          <Route path="hackathons" element={<HackathonsPage />} />
+          <Route path="memory" element={<MemoryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
