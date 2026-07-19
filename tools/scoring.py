@@ -88,9 +88,12 @@ def classify_opportunity_category(company: str, role_type: str, description: str
                     "ai_ml = ML/AI-focused roles. backend = backend/infra only. "
                     "fullstack = both frontend+backend. frontend = frontend-only. "
                     "other = doesn't fit above. "
-                    "remote = explicitly remote/distributed. "
-                    "bangalore_onsite = onsite specifically in Bangalore/Bengaluru. "
-                    "other_onsite = onsite anywhere else or unclear. "
+                    "remote = explicitly remote/distributed, OR remote is listed as ONE OF "
+                    "MULTIPLE options (e.g. 'SF or Remote', 'Onsite/Remote') -- if remote is "
+                    "offered as any valid option, classify as remote, don't default to onsite. "
+                    "bangalore_onsite = ONLY onsite, specifically in Bangalore/Bengaluru, no "
+                    "remote option mentioned. "
+                    "other_onsite = ONLY onsite, anywhere else, no remote option mentioned. "
                     'Respond ONLY with JSON: {"stack": "<one of the stack list>", '
                     '"location": "<one of the location list>"}'
                 ),
