@@ -5,7 +5,7 @@ for job postings, plus a separate hackathon discovery pipeline.
 from db.models import get_session, Opportunity
 from db.memory import is_duplicate
 from tools.scrapers import search_hackernews_jobs
-from tools.scoring import score_opportunities_batch, classify_hackathon
+from tools.scoring import score_opportunities_batch, classify_hackathons_batch
 from tools.search import search_hackathons
 
 STACK_CONTEXT = "Python, FastAPI, AWS Lambda, PostgreSQL, LangGraph, Google ADK, XGBoost, React, Spring Boot"
@@ -81,16 +81,20 @@ def run_scout(limit: int | None = None, min_fit_score: int = 6) -> dict:
 def run_hackathon_scout(limit: int = 8, min_relevance: int = 5) -> dict:
     """
     Finds currently-open hackathons matching Adnan's location/stack rules.
-    Not persisted to a DB table (schema has no hackathons table) —
-    returns results directly for the Telegram digest to consume.
+    Uses batched classification -- one Groq call for all candidates
+    instead of one per candidate (fixes TPM limit hit during first
+    real GitHub Actions run, see classify_hackathons_batch()).
     """
     results = search_hackathons(max_results=limit)
 
-    eligible = []
-    for r in results:
-        content = r.get("raw_content") or r.get("content", "")
-        verdict = classify_hackathon(r["title"], content, STACK_CONTEXT)
+    candidates = [
+        {"title": r["title"], "content": r.get("raw_content") or r.get("content", "")}
+        for r in results
+    ]
+    verdicts = classify_hackathons_batch(candidates, STACK_CONTEXT)
 
+    eligible = []
+    for r, verdict in zip(results, verdicts):
         if verdict["eligible"] and verdict["stack_relevance_score"] >= min_relevance:
             eligible.append({
                 "title": r["title"],

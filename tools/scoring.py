@@ -290,3 +290,67 @@ def score_opportunities_batch(opportunities: list[dict], batch_size: int = 15) -
             all_results.extend([{"fit_score": None, "fit_reasoning": f"Batch parse error: {e}"}] * len(batch))
 
     return all_results
+
+def classify_hackathons_batch(hackathons: list[dict], stack_context: str) -> list[dict]:
+    """
+    Batched version of classify_hackathon() -- same fix as
+    score_opportunities_batch() applied here. classify_hackathon()
+    was still firing one call per candidate (up to 8), which combined
+    with Scout + Tech Pulse token usage in the same rolling 60s window
+    blew past Groq's 8000 TPM limit during the first real GitHub
+    Actions run. One batched call instead of up to 8 fixes this.
+
+    hackathons: list of {"title": str, "content": str} dicts.
+    Returns list of verdict dicts, same order/length as input.
+    """
+    if not hackathons:
+        return []
+
+    items_text = "\n\n".join(
+        f"[{idx}] Title: {h['title']}\nContent: {h['content'][:1500]}"
+        for idx, h in enumerate(hackathons)
+    )
+
+    batch_prompt = (
+        f"Today's date is {datetime.now(timezone.utc).strftime('%B %d, %Y')}. "
+        f"Evaluate EACH of the following {len(hackathons)} hackathons "
+        f"(indexed [0] to [{len(hackathons)-1}]) for a candidate with this stack: {stack_context}. "
+        "Rules per item: (1) if deadline has passed relative to today, eligible=false, reason='expired'. "
+        "(2) online/virtual/remote or open to any location -> eligible=true. "
+        "(3) in-person/onsite -> eligible=true ONLY if city is Bangalore/Bengaluru, India, else false. "
+        "(4) give stack_relevance_score 1-10. "
+        f"Respond with ONLY a JSON array, length {len(hackathons)}, same order, no markdown:\n"
+        '[{"eligible": bool, "reason": "<short phrase>", "stack_relevance_score": <int 1-10>, '
+        '"deadline_found": "<date or null>"}, ...]'
+    )
+
+    try:
+        result = _call_groq({
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": batch_prompt},
+                {"role": "user", "content": items_text},
+            ],
+            "temperature": 0.1,
+        })
+    except RuntimeError as e:
+        print(f"Batch hackathon classify failed entirely: {e}")
+        return [{"eligible": False, "reason": f"batch call failed: {e}", "stack_relevance_score": 0, "deadline_found": None}] * len(hackathons)
+
+    raw = result["choices"][0]["message"]["content"]
+
+    try:
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```")[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+        parsed = json.loads(cleaned)
+
+        if not isinstance(parsed, list) or len(parsed) != len(hackathons):
+            raise ValueError(f"Expected list of {len(hackathons)}, got {type(parsed)}")
+
+        return parsed
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        print(f"Batch hackathon parse failed: {e} | raw: {raw[:300]}")
+        return [{"eligible": False, "reason": f"parse error: {e}", "stack_relevance_score": 0, "deadline_found": None}] * len(hackathons)
