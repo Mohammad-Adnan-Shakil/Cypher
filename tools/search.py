@@ -145,8 +145,11 @@ def _extract_email_from_content(founder_name: str, company_domain: str, content:
 
     # Nothing real found -- fall back to a format guess, honestly
     # labeled as low-confidence since it's unverified.
-    first_name = founder_name.split()[0].lower() if founder_name else "unknown"
-    last_name = founder_name.split()[-1].lower() if founder_name and len(founder_name.split()) > 1 else ""
+    TITLES = {"dr", "dr.", "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "prof", "prof."}
+    name_parts = [p for p in founder_name.split() if p.lower().strip(".") not in TITLES] if founder_name else []
+
+    first_name = name_parts[0].lower().strip(".") if name_parts else "unknown"
+    last_name = name_parts[-1].lower().strip(".") if len(name_parts) > 1 else ""
     guessed = f"{first_name}.{last_name}@{company_domain}" if last_name else None
 
     return {
