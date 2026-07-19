@@ -4,7 +4,7 @@ researches the company, guesses email format, and saves a Founder
 record linked back to that opportunity.
 """
 from db.models import get_session, Founder, Opportunity
-from tools.search import find_founder, get_company_info, find_email_format
+from tools.search import find_founder, get_company_info, find_verified_email
 
 
 def research_founder(opportunity_id: int) -> dict:
@@ -26,15 +26,16 @@ def research_founder(opportunity_id: int) -> dict:
     # would need a company-info API; this is a placeholder heuristic
     # until Phase 5 needs something more precise.
     guessed_domain = f"{company.lower().replace(' ', '')}.com"
-    email_guess = find_email_format(guessed_domain)
+    founder_name_for_search = founder_result["name"] if founder_result else company
+    email_result = find_verified_email(founder_name_for_search, company, guessed_domain)
 
     with get_session() as session:
         founder = Founder(
             opportunity_id=opportunity_id,
             name=founder_result["name"] if founder_result else None,
             linkedin_url=founder_result["linkedin_url"] if founder_result else None,
-            email=None,  # we only have a format guess, not an actual address yet
-            email_confidence=email_guess["confidence"],
+            email=email_result["email"],
+            email_confidence=email_result["confidence"],
             company_stage=None,  # left for manual read of raw_findings for now
             tech_stack=None,
             recent_activity=company_info["raw_findings"][:2000],
@@ -54,5 +55,7 @@ def research_founder(opportunity_id: int) -> dict:
         "founder_id": founder_id,
         "founder_name": founder_result["name"] if founder_result else None,
         "linkedin_url": founder_result["linkedin_url"] if founder_result else None,
-        "email_confidence": email_guess["confidence"],
+        "email": email_result["email"],
+        "email_confidence": email_result["confidence"],
+        "email_method": email_result["method"],
     }

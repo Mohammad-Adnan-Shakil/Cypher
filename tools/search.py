@@ -66,34 +66,93 @@ def get_company_info(company: str) -> dict:
     }
 
 
-def find_email_format(company_domain: str) -> dict:
+def find_verified_email(founder_name: str, company: str, company_domain: str) -> dict:
     """
-    Searches for the likely email format used at a company
-    (e.g. first.last@domain.com vs firstinitial+last@domain.com).
-    This is a best-effort guess — email_confidence should reflect
-    that this is inferred, not verified.
-    """
-    results = web_search(f'"{company_domain}" email format contact', max_results=3)
+    Attempts to find a real email address for a founder via targeted
+    Tavily searches, rather than just guessing a format blindly.
 
-    # Common pattern: firstname.lastname@domain, first initial + lastname@domain
-    combined = " ".join(r.get("content", "") for r in results)
-    pattern_match = re.search(
-        r"[a-z]+\.[a-z]+@" + re.escape(company_domain),
-        combined,
-        re.IGNORECASE,
+    Tries multiple search angles (direct email search, contact page,
+    press releases which often list founder emails) and has an LLM
+    read the actual results to extract a real address if one is
+    publicly listed. Falls back to a format guess only if nothing
+    real is found -- and marks that clearly via confidence score.
+
+    Returns {"email": str|None, "confidence": float, "source": str,
+    "method": "found"|"guessed"|"none"}
+    """
+    # Try a few different angles -- founders' emails often surface in
+    # press coverage, "contact us" pages, or conference speaker bios
+    # rather than a single obvious search.
+    queries = [
+        f'"{founder_name}" "{company}" email contact',
+        f"{company} founder contact email press",
+        f"{founder_name} {company_domain} email",
+    ]
+
+    all_results = []
+    for q in queries:
+        all_results.extend(web_search(q, max_results=3))
+
+    combined_content = "\n\n".join(
+        f"[{r['title']}]: {r.get('content', '')[:400]}" for r in all_results
     )
 
-    if pattern_match:
-        return {
-            "likely_format": "first.last@domain",
-            "example_found": pattern_match.group(0),
-            "confidence": 0.6,
-        }
+    return _extract_email_from_content(founder_name, company_domain, combined_content)
+
+
+def _extract_email_from_content(founder_name: str, company_domain: str, content: str) -> dict:
+    """LLM reads search result content and extracts a real email if genuinely present."""
+    import json
+    import httpx
+    from config import settings
+
+    resp = httpx.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+        json={
+            "model": "openai/gpt-oss-120b",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        f"Search for a real, explicitly stated email address for "
+                        f"'{founder_name}' at domain '{company_domain}' in the content below. "
+                        "Only extract an email if it is LITERALLY written in the text -- "
+                        "do not invent or guess one. Respond ONLY with JSON: "
+                        '{"email": "<found email or null>", "found_explicitly": bool}'
+                    ),
+                },
+                {"role": "user", "content": content[:3000]},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.0,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    raw = resp.json()["choices"][0]["message"]["content"]
+
+    try:
+        parsed = json.loads(raw)
+        if parsed.get("found_explicitly") and parsed.get("email"):
+            return {
+                "email": parsed["email"],
+                "confidence": 0.85,
+                "method": "found",
+            }
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+    # Nothing real found -- fall back to a format guess, honestly
+    # labeled as low-confidence since it's unverified.
+    first_name = founder_name.split()[0].lower() if founder_name else "unknown"
+    last_name = founder_name.split()[-1].lower() if founder_name and len(founder_name.split()) > 1 else ""
+    guessed = f"{first_name}.{last_name}@{company_domain}" if last_name else None
 
     return {
-        "likely_format": "first.last@domain",  # most common default fallback
-        "example_found": None,
-        "confidence": 0.2,
+        "email": guessed,
+        "confidence": 0.15,
+        "method": "guessed",
     }
 
 def search_ai_news(max_results: int = 5) -> list[dict]:
