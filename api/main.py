@@ -14,6 +14,10 @@ from db.models import get_session, Opportunity, Founder, Outreach, TechUpdate, H
 
 app = FastAPI(title="Cypher Dashboard API")
 
+@app.get("/")
+def root():
+    return {"service": "Cypher API", "status": "ok", "docs": "/docs"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://cypher-navy.vercel.app", "http://localhost:5173"],
