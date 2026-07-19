@@ -60,6 +60,58 @@ def _call_groq(payload: dict, max_retries: int = 3) -> dict:
     raise RuntimeError(f"Groq rate limit exceeded after {max_retries} retries")
 
 
+STACK_CATEGORIES = ["ai_ml", "backend", "fullstack", "frontend", "other"]
+LOCATION_CATEGORIES = ["remote", "bangalore_onsite", "other_onsite"]
+
+
+def classify_opportunity_category(company: str, role_type: str, description: str) -> str:
+    """
+    Classifies an opportunity into a FIXED taxonomy bucket (stack x
+    location), instead of using raw scraped text as the feedback
+    category. Raw text like "SF or Remote" or "Backend Intern" never
+    repeats consistently across postings, so cypher_memory's
+    preference_patterns could never actually generalize -- this fixes
+    that by forcing every opportunity into one of a small, stable set
+    of categories.
+
+    Returns a string like "ai_ml_remote" or "backend_bangalore_onsite".
+    """
+    result = _call_groq({
+        "model": MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    f"Classify this job posting into EXACTLY ONE stack category from: "
+                    f"{STACK_CATEGORIES} AND exactly one location category from: "
+                    f"{LOCATION_CATEGORIES}. "
+                    "ai_ml = ML/AI-focused roles. backend = backend/infra only. "
+                    "fullstack = both frontend+backend. frontend = frontend-only. "
+                    "other = doesn't fit above. "
+                    "remote = explicitly remote/distributed. "
+                    "bangalore_onsite = onsite specifically in Bangalore/Bengaluru. "
+                    "other_onsite = onsite anywhere else or unclear. "
+                    'Respond ONLY with JSON: {"stack": "<one of the stack list>", '
+                    '"location": "<one of the location list>"}'
+                ),
+            },
+            {"role": "user", "content": f"Company: {company}\nRole: {role_type}\nDescription: {description[:500]}"},
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.0,
+    })
+
+    raw = result["choices"][0]["message"]["content"]
+
+    try:
+        parsed = json.loads(raw)
+        stack = parsed.get("stack") if parsed.get("stack") in STACK_CATEGORIES else "other"
+        location = parsed.get("location") if parsed.get("location") in LOCATION_CATEGORIES else "other_onsite"
+        return f"{stack}_{location}"
+    except (json.JSONDecodeError, KeyError):
+        return "other_other_onsite"
+
+
 CANDIDATE_PROFILE = (
     "2nd-year CSE student targeting part-time ML/Backend roles at AI "
     "startups, remote or Bengaluru. NOT senior/staff/3+yr roles. "
