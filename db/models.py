@@ -123,6 +123,23 @@ class TechUpdate(Base):
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
+class Hackathon(Base):
+    __tablename__ = "hackathons"
+    __table_args__ = (
+        UniqueConstraint("url", name="uq_hackathons_url"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(300))
+    url: Mapped[str] = mapped_column(String(500))
+    relevance_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1-10
+    deadline: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # kept as string -- source dates aren't always parseable
+    eligibility_reason: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    # new -> reviewed -> applied -> skipped
+    status: Mapped[str] = mapped_column(String(20), default="new")
+
 
 class CypherMemory(Base):
     __tablename__ = "cypher_memory"

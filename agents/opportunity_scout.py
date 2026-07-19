@@ -2,7 +2,8 @@
 Opportunity Scout — orchestrates scrape -> dedup -> score -> persist
 for job postings, plus a separate hackathon discovery pipeline.
 """
-from db.models import get_session, Opportunity
+from db.models import get_session, Opportunity, Hackathon
+from sqlalchemy import select
 from db.memory import is_duplicate
 from tools.scrapers import search_hackernews_jobs
 from tools.scoring import score_opportunities_batch, classify_hackathons_batch
@@ -81,9 +82,9 @@ def run_scout(limit: int | None = None, min_fit_score: int = 6) -> dict:
 def run_hackathon_scout(limit: int = 8, min_relevance: int = 5) -> dict:
     """
     Finds currently-open hackathons matching Adnan's location/stack rules.
-    Uses batched classification -- one Groq call for all candidates
-    instead of one per candidate (fixes TPM limit hit during first
-    real GitHub Actions run, see classify_hackathons_batch()).
+    Persists eligible results to the hackathons table (dedup by url via
+    UniqueConstraint) so the dashboard can show them over time -- 
+    previously these were sent to Telegram and then lost.
     """
     results = search_hackathons(max_results=limit)
 
@@ -94,14 +95,29 @@ def run_hackathon_scout(limit: int = 8, min_relevance: int = 5) -> dict:
     verdicts = classify_hackathons_batch(candidates, STACK_CONTEXT)
 
     eligible = []
-    for r, verdict in zip(results, verdicts):
-        if verdict["eligible"] and verdict["stack_relevance_score"] >= min_relevance:
-            eligible.append({
-                "title": r["title"],
-                "url": r["url"],
-                "relevance_score": verdict["stack_relevance_score"],
-                "deadline": verdict["deadline_found"],
-            })
+    with get_session() as session:
+        for r, verdict in zip(results, verdicts):
+            if verdict["eligible"] and verdict["stack_relevance_score"] >= min_relevance:
+                eligible.append({
+                    "title": r["title"],
+                    "url": r["url"],
+                    "relevance_score": verdict["stack_relevance_score"],
+                    "deadline": verdict["deadline_found"],
+                })
+
+                existing = session.execute(
+                    select(Hackathon).where(Hackathon.url == r["url"])
+                ).scalar_one_or_none()
+                if existing is None:
+                    session.add(Hackathon(
+                        title=r["title"][:300],
+                        url=r["url"][:500],
+                        relevance_score=verdict["stack_relevance_score"],
+                        deadline=str(verdict["deadline_found"])[:50] if verdict["deadline_found"] else None,
+                        eligibility_reason=str(verdict["reason"])[:200],
+                        status="new",
+                    ))
+        session.commit()
 
     eligible.sort(key=lambda x: x["relevance_score"], reverse=True)
     return {"total_found": len(results), "eligible_count": len(eligible), "hackathons": eligible}
