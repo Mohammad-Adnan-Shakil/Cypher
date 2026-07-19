@@ -104,6 +104,17 @@ for on-demand runs or testing.
 5. For automated daily runs: add the same secrets to GitHub repo Settings →
    Secrets and variables → Actions, then the existing workflow handles the rest
 
+## Testing
+
+```powershell
+python -m pytest tests/ -v
+```
+
+A small regression suite covering real bugs found during development
+(not coverage padding) — malformed LLM response handling, email-guess
+title-stripping, and the SQLAlchemy shallow-copy dirty-check bug that
+silently capped the feedback loop at one update per category.
+
 ## Author
 
 Mohammad Adnan Shakil — [GitHub](https://github.com/Mohammad-Adnan-Shakil) · [Portfolio](https://portfolio-p2jh.vercel.app)
