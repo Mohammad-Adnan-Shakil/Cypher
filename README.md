@@ -14,34 +14,27 @@ never forgets.
 ---
 
 ## Architecture
-                ┌─────────────────┐
-                │   Orchestrator   │  (LangGraph, sequential)
-                └────────┬─────────┘
-                         │
-    ┌────────────────────┼────────────────────┐
-    ▼                    ▼                     ▼
-┌───────────────┐   ┌────────────────┐   ┌──────────────────┐
-│ Opportunity    │   │  Tech Pulse    │   │ Hackathon Scout   │
-│ Scout (Agent 1)│   │  (Agent 4)     │   │ (part of Agent 1) │
-└───────┬────────┘   └────────────────┘   └──────────────────┘
-│ (score >= 8)
-▼
-┌───────────────┐    ┌──────────────────┐
-│ Founder        │───▶│ Outreach Drafter │
-│ Researcher     │    │ (Agent 3)        │
-│ (Agent 2)      │    └──────────────────┘
-└───────────────┘
-│
-▼
-┌─────────────────────────────────────┐
-│  cypher_memory (feedback loop)       │
-│  learns from Telegram approve/skip   │
-└─────────────────────────────────────┘
-┌──────────────────┐
-│ Reply Tracker      │  (tools built: check_email_inbox,
-│ (Agent 5)          │   classify_reply, send_email —
-└──────────────────┘   not yet wired into orchestrator)
-All state persists in PostgreSQL (Neon). Delivery/interaction via Telegram.
+
+The orchestrator (LangGraph, sequential) runs these steps in order:
+
+1. **Opportunity Scout** (Agent 1) — scrapes and scores job postings
+2. For any opportunity scoring 8+, automatically runs:
+   - **Founder Researcher** (Agent 2) — finds the founder, researches the company
+   - **Outreach Drafter** (Agent 3) — drafts a personalized email
+3. **Tech Pulse** (Agent 4) — pulls and filters relevant tech news
+4. **Hackathon Scout** (part of Agent 1) — finds eligible open hackathons
+5. Compiles everything into one Telegram digest and sends it
+
+Every Telegram approve/skip you send updates `cypher_memory` — a
+feedback loop intended to bias future scoring toward what you actually
+approve.
+
+**Reply Tracker** (Agent 5) exists as a set of tools — `check_email_inbox`,
+`classify_reply`, `send_email` — all built and tested individually, but
+not yet wired into the daily orchestrator run.
+
+All state persists in PostgreSQL (Neon). Delivery and interaction happen
+entirely through Telegram.
 
 ## Agents
 
