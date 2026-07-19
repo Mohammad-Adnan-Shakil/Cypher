@@ -16,7 +16,7 @@ app = FastAPI(title="Cypher Dashboard API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # personal/local dashboard, no sensitive write access
+    allow_origins=["https://cypher-navy.vercel.app", "http://localhost:5173"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
