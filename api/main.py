@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, func
 
 from db.models import get_session, Opportunity, Founder, Outreach, TechUpdate, Hackathon, CypherMemory
+from tools.scoring import classify_opportunity_category
+import httpx
 
 app = FastAPI(title="Cypher Dashboard API")
 
@@ -163,3 +165,80 @@ def get_stats():
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+
+TELEGRAM_API = f"https://api.telegram.org/bot{__import__('config').settings.telegram_bot_token}"
+
+
+def _send_telegram_message(text: str):
+    httpx.post(f"{TELEGRAM_API}/sendMessage", json={
+        "chat_id": __import__('config').settings.telegram_chat_id,
+        "text": text,
+    }, timeout=15)
+
+
+@app.post("/telegram/webhook")
+async def telegram_webhook(request: dict):
+    import re
+
+    message = request.get("message", {})
+    text = (message.get("text") or "").strip()
+
+    match = re.match(r"^(send|skip)\s+(\d+)$", text, re.IGNORECASE)
+    if not match:
+        return {"ok": True}
+
+    action, index_str = match.groups()
+    index = int(index_str)
+
+    with get_session() as session:
+        opps = session.execute(
+            select(Opportunity).order_by(Opportunity.found_at.desc())
+        ).scalars().all()
+
+        if index < 1 or index > len(opps):
+            _send_telegram_message(f"No opportunity #{index} in the last digest.")
+            return {"ok": True}
+
+        opp = opps[index - 1]
+
+        if action.lower() == "send":
+            opp.user_feedback = "approved"
+            outreach = session.query(Outreach).filter(Outreach.opportunity_id == opp.id).first()
+            founder = session.query(Founder).filter(Founder.opportunity_id == opp.id).first()
+
+            category = classify_opportunity_category(opp.company or "", opp.role_type or "", opp.description or "")
+
+            if outreach is None:
+                opp.status = "drafted"
+                _send_telegram_message(f"#{index} approved, but no draft found to send.")
+            elif not founder or not founder.email:
+                opp.status = "drafted"
+                _send_telegram_message(
+                    f"#{index} ({opp.company}) approved, but no verified email address "
+                    f"on file for the founder — can't send automatically."
+                )
+            else:
+                from tools.gmail import send_email
+                try:
+                    result = send_email(to=founder.email, subject=f"Re: {opp.role_type or 'your posting'}", body=outreach.email_draft)
+                    outreach.gmail_thread_id = result["thread_id"]
+                    outreach.email_sent_at = datetime.now(timezone.utc)
+                    outreach.email_to = founder.email
+                    opp.status = "sent"
+                    _send_telegram_message(f"#{index} ({opp.company}) sent to {founder.email}.")
+                except Exception as e:
+                    opp.status = "drafted"
+                    _send_telegram_message(f"#{index} approve recorded, but send failed: {e}")
+        else:
+            opp.status = "ignored"
+            opp.user_feedback = "skipped"
+            category = classify_opportunity_category(opp.company or "", opp.role_type or "", opp.description or "")
+            _send_telegram_message(f"Got it — #{index} ({opp.company}) marked as skipped.")
+
+        session.commit()
+
+    from db.memory import update_feedback_pattern
+    update_feedback_pattern(category, "approved" if action.lower() == "send" else "skipped")
+
+    return {"ok": True}
