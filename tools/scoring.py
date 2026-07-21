@@ -361,8 +361,23 @@ def classify_hackathons_batch(hackathons: list[dict], stack_context: str) -> lis
     if not hackathons:
         return []
 
+    def _smart_truncate(content: str, limit: int = 1500) -> str:
+        """
+        Deadline info often sits well past the first 1500 chars of a
+        hackathon page (confirmed: positions up to 29,665 in real
+        data). Naive content[:limit] silently cuts deadlines off.
+        If a 'deadline' mention exists, center the truncation window
+        around it instead of always taking the start of the page.
+        """
+        idx = content.lower().find("deadline")
+        if idx == -1 or idx < limit:
+            return content[:limit]
+        # Center the window around the deadline mention
+        start = max(0, idx - 200)
+        return content[start:start + limit]
+
     items_text = "\n\n".join(
-        f"[{idx}] Title: {h['title']}\nContent: {h['content'][:1500]}"
+        f"[{idx}] Title: {h['title']}\nContent: {_smart_truncate(h['content'])}"
         for idx, h in enumerate(hackathons)
     )
 
