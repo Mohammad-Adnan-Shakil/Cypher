@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import GenerativeArtScene from './GenerativeArtScene';
 import LogoMark from './LogoMark';
 import ArchitectureDiagram from './ArchitectureDiagram';
@@ -15,6 +15,8 @@ const TECH_BADGES = ['LangGraph', 'Groq', 'PostgreSQL', 'Gmail API', 'Telegram']
 const WORDS = ['Watches.', 'Researches.', 'Drafts.', 'Remembers.', 'Gets', 'smarter.'];
 
 export default function Hero() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
@@ -35,13 +37,14 @@ export default function Hero() {
       />
 
       <header className="relative z-20">
-        <nav className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
-          <div className="flex items-center gap-2 font-heading text-lg tracking-[0.2em]">
+        <nav className="flex items-center justify-between px-4 sm:px-6 py-5 max-w-6xl mx-auto">
+          <a href="/" className="flex items-center gap-2 font-heading text-lg tracking-[0.2em]">
             <LogoMark size={22} />
             <span className="text-primary">CYPHER</span>
-          </div>
+          </a>
 
-          <div className="flex items-center gap-4 sm:gap-8">
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.label}
@@ -55,7 +58,50 @@ export default function Hero() {
               </a>
             ))}
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden flex items-center justify-center w-8 h-8 text-muted hover:text-primary transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {menuOpen ? (
+                <>
+                  <line x1="4" y1="4" x2="16" y2="16" />
+                  <line x1="16" y1="4" x2="4" y2="16" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="5" x2="17" y2="5" />
+                  <line x1="3" y1="10" x2="17" y2="10" />
+                  <line x1="3" y1="15" x2="17" y2="15" />
+                </>
+              )}
+            </svg>
+          </button>
         </nav>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="md:hidden bg-surface border-t border-border max-w-[100vw]">
+            <div className="px-4 py-3 flex flex-col gap-1">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="font-body text-sm text-muted hover:text-primary transition-colors px-3 py-2 rounded hover:bg-white/[0.04]"
+                  onClick={() => setMenuOpen(false)}
+                  {...(link.external
+                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                    : {})}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
       <section className="relative z-20 flex flex-col items-center justify-center px-4 sm:px-6 pt-14 sm:pt-20 pb-20 sm:pb-32 text-center">
