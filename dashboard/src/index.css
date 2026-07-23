@@ -13,10 +13,18 @@ body {
 
 :root {
   --color-surface: #0a0a0f;
+  --color-surface-elevated: #12121a;
+  --color-surface-hover: #1a1a24;
   --color-primary: #f0f0f0;
-  --color-muted: #a0a0a8;
+  --color-muted: #8a8a94;
+  --color-muted-lighter: #5a5a64;
   --color-accent: #ff2d78;
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-accent-subtle: rgba(255, 45, 120, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.04);
+  --color-success: #3dff8f;
+  --color-warning: #ffb800;
+  --color-error: #ff4757;
 }
 
 @keyframes fade-up {
@@ -30,6 +38,17 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-word {
   animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }

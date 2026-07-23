@@ -5,10 +5,18 @@ export default {
     extend: {
       colors: {
         surface: 'var(--color-surface)',
+        'surface-elevated': 'var(--color-surface-elevated)',
+        'surface-hover': 'var(--color-surface-hover)',
         primary: 'var(--color-primary)',
         muted: 'var(--color-muted)',
+        'muted-lighter': 'var(--color-muted-lighter)',
         accent: 'var(--color-accent)',
+        'accent-subtle': 'var(--color-accent-subtle)',
         border: 'var(--color-border)',
+        'border-light': 'var(--color-border-light)',
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        error: 'var(--color-error)',
       },
       fontFamily: {
         heading: [
